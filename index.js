@@ -5,7 +5,6 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
-// MongoDB URI
 const uri = "mongodb+srv://assignment-10:4Vz2SNpf763jJ8GZ@cluster0.q7tqgdi.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
@@ -30,10 +29,9 @@ async function run() {
     const db = client.db("assignment_10_db");
     const productsCollection = db.collection("pruducts");
     const reviewsCollection = db.collection("reviews");
+    const favoritesCollection = db.collection("favorites"); // NEW COLLECTION
 
-    // ----------------------------
-    // Products Routes
-    // ----------------------------
+    // ---------------------------- Products ----------------------------
     app.post("/pruducts", async (req, res) => {
       const newProduct = req.body;
       const result = await productsCollection.insertOne(newProduct);
@@ -49,54 +47,49 @@ async function run() {
           .toArray();
         res.send(topProducts);
       } catch (err) {
-        console.error(err);
         res.status(500).send({ message: "Failed to fetch products" });
       }
     });
 
-    // ----------------------------
-    // Reviews Routes
-    // ----------------------------
+    // ---------------------------- Reviews ----------------------------
 
-    // POST new review
     app.post("/reviews", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
       res.send(result);
     });
 
-    // GET all reviews sorted by date (newest first)
+    // Search + Get all reviews
     app.get("/reviews", async (req, res) => {
       try {
-        const { email } = req.query; // optional query to filter by user
-        const query = email ? { userEmail: email } : {};
+        const { email, search } = req.query;
+        let query = {};
+
+        if (email) query.userEmail = email;
+        if (search) query.foodName = { $regex: search, $options: "i" }; // case-insensitive search
+
         const reviews = await reviewsCollection
           .find(query)
           .sort({ date: -1 })
           .toArray();
+
         res.send(reviews);
       } catch (err) {
-        console.error(err);
         res.status(500).send({ message: "Failed to fetch reviews" });
       }
     });
 
-    // GET single review by ID
     app.get("/reviews/:id", async (req, res) => {
       const { id } = req.params;
-      
-    //   console.log("Fetching review with ID:", id);
       try {
         const review = await reviewsCollection.findOne({ _id: new ObjectId(id) });
         if (!review) return res.status(404).send({ message: "Review not found" });
         res.send(review);
       } catch (err) {
-        console.error(err);
         res.status(500).send({ message: "Failed to fetch review" });
       }
     });
 
-    // PUT update review by ID
     app.put("/reviews/:id", async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
@@ -112,15 +105,12 @@ async function run() {
 
         res.send({ message: "Review updated successfully" });
       } catch (err) {
-        console.error(err);
         res.status(500).send({ message: "Failed to update review" });
       }
     });
 
-    // DELETE review by ID
     app.delete("/reviews/:id", async (req, res) => {
       const { id } = req.params;
-
       try {
         const result = await reviewsCollection.deleteOne({ _id: new ObjectId(id) });
 
@@ -129,20 +119,41 @@ async function run() {
 
         res.send({ message: "Review deleted successfully" });
       } catch (err) {
-        console.error(err);
         res.status(500).send({ message: "Failed to delete review" });
       }
     });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log("pinged your deployment successfully");
-  } finally {
-    // Optional cleanup
-  }
+    // ---------------------------- Favorites System ----------------------------
+
+    // Add to favorites
+    app.post("/favorites", async (req, res) => {
+      const favorite = req.body;
+      const result = await favoritesCollection.insertOne(favorite);
+      res.send(result);
+    });
+
+    // Get favorites by logged in user
+    app.get("/favorites", async (req, res) => {
+      const email = req.query.email;
+      if (!email) return res.status(400).send({ message: "Email is required" });
+
+      const favorites = await favoritesCollection.find({ userEmail: email }).toArray();
+      res.send(favorites);
+    });
+
+    // Remove from favorites (optional)
+    app.delete("/favorites/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await favoritesCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    console.log("Database Connected Successfully");
+  } finally {}
 }
 
 run().catch(console.dir);
 
 app.listen(port, () => {
-  console.log(`simple crud server is running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
