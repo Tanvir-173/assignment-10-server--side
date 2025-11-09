@@ -66,7 +66,7 @@ async function run() {
         let query = {};
 
         if (email) query.userEmail = email;
-        // if (search) query.foodName = { $regex: search, $options: "i" }; // case-insensitive search
+        if (search) query.foodName = { $regex: search, $options: "i" }; // case-insensitive search
 
         const reviews = await reviewsCollection
           .find(query)
