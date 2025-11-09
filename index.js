@@ -85,7 +85,7 @@ async function run() {
     app.get("/reviews/:id", async (req, res) => {
       const { id } = req.params;
       
-      console.log("Fetching review with ID:", id);
+    //   console.log("Fetching review with ID:", id);
       try {
         const review = await reviewsCollection.findOne({ _id: new ObjectId(id) });
         if (!review) return res.status(404).send({ message: "Review not found" });
