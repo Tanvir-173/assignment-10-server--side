@@ -58,6 +58,24 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch products" });
       }
     });
+    // Get single product by _id
+    app.get("/pruducts/:id", async (req, res) => {
+      const { id } = req.params;
+
+      try {
+        const product = await productsCollection.findOne({ _id: new ObjectId(id) });
+
+        if (!product) {
+          return res.status(404).send({ message: "Product not found" });
+        }
+
+        res.send(product);
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        res.status(500).send({ message: "Failed to fetch product" });
+      }
+    });
+
 
     // ---------------------------- Reviews ----------------------------
 
