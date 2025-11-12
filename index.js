@@ -68,13 +68,31 @@ async function run() {
     });
 
     // Search + Get all reviews
+    // app.get("/reviews", async (req, res) => {
+    //   try {
+    //     const { email, search } = req.query;
+    //     let query = {};
+
+    //     if (email) query.userEmail = email;
+    //     if (search) query.foodName = { $regex: search, $options: "i" }; // case-insensitive search
+
+    //     const reviews = await reviewsCollection
+    //       .find(query)
+    //       .sort({ date: -1 })
+    //       .toArray();
+
+    //     res.send(reviews);
+    //   } catch (err) {
+    //     res.status(500).send({ message: "Failed to fetch reviews" });
+    //   }
+    // });
     app.get("/reviews", async (req, res) => {
       try {
-        const { email, search } = req.query;
+        const { userEmail, search } = req.query;
         let query = {};
 
-        if (email) query.userEmail = email;
-        if (search) query.foodName = { $regex: search, $options: "i" }; // case-insensitive search
+        if (userEmail) query.userEmail = userEmail;
+        if (search) query.foodName = { $regex: search, $options: "i" };
 
         const reviews = await reviewsCollection
           .find(query)
@@ -86,6 +104,7 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch reviews" });
       }
     });
+
 
     app.get("/reviews/:id", async (req, res) => {
       const { id } = req.params;
@@ -157,7 +176,7 @@ async function run() {
     });
 
     console.log("Database Connected Successfully");
-  } finally {}
+  } finally { }
 }
 
 run().catch(console.dir);
